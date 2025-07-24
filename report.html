@@ -87,15 +87,12 @@
             font-weight: bold;
         }
     </style>
-    <!-- Google API Client Libraries -->
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </head>
 <body class="p-4">
     <div class="max-w-md mx-auto">
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Photo Collage Maker</h1>
-            <p class="text-gray-600">Take 4 photos, add a description, and save to the cloud!</p>
+            <p class="text-gray-600">Take 4 photos to create your collage</p>
         </div>
         
         <div id="cameraView" class="camera-container mb-6 aspect-video bg-gray-900 flex items-center justify-center">
@@ -150,30 +147,6 @@
                 <img id="collage4" class="w-full h-full object-cover" />
             </div>
             
-            <!-- Google Integration Section -->
-            <div id="googleIntegration" class="hidden mt-6 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 text-center">
-                <h3 class="text-xl font-semibold text-gray-800 mb-4">Share Your Creation</h3>
-                <p id="googleSignInMessage" class="text-gray-600 mb-4">Sign in with Google to save your collage.</p>
-                
-                <button id="authorize_button" class="btn-gradient text-white font-medium py-2 px-6 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <svg class="w-5 h-5 mr-2" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.022,35.242,44,30.038,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
-                    Sign In with Google
-                </button>
-                <button id="signout_button" class="hidden bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg flex items-center justify-center mx-auto">
-                    Sign Out
-                </button>
-
-                <div id="uploadControls" class="hidden mt-4">
-                     <button id="uploadBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg flex items-center justify-center w-full disabled:opacity-50 disabled:cursor-wait" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                        </svg>
-                        Save to Google Drive & Sheets
-                    </button>
-                    <p id="uploadStatus" class="mt-2 text-sm text-gray-500 h-4"></p>
-                </div>
-            </div>
-            
             <div class="mt-4 flex justify-center">
                 <button id="downloadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg flex items-center">
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -188,345 +161,189 @@
     </div>
 
     <script>
-        // --- Global App State & Configuration ---
-        const appState = {
-            stream: null,
-            photosTaken: 0,
-            photos: [],
-            currentPreviewIndex: 1
-        };
+        // --- App Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Global App State ---
+            const appState = {
+                stream: null,
+                photosTaken: 0,
+                photos: [],
+                currentPreviewIndex: 1
+            };
 
-        // IMPORTANT: REPLACE WITH YOUR OWN CREDENTIALS AND SPREADSHEET ID
-        const CLIENT_ID = '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.apps.googleusercontent.com';
-        const SPREADSHEET_ID = '1vqIncC9s7mlC_kvt4u94yMLqNtera_SA-orIDOK6AsY';
-        const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
-
-        let tokenClient;
-        let gapiInited = false;
-        let gisInited = false;
-        let domReady = false;
-
-        // --- Camera & Collage Functions ---
-        async function initCamera() {
+            // --- Element Selectors ---
             const cameraView = document.getElementById('camera');
             const cameraPlaceholder = document.getElementById('cameraPlaceholder');
             const captureBtn = document.getElementById('captureBtn');
-            try {
-                appState.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-                cameraView.srcObject = appState.stream;
-                cameraView.classList.remove('hidden');
-                cameraPlaceholder.classList.add('hidden');
-                captureBtn.disabled = false;
-                captureBtn.classList.add('pulse-animation');
-            } catch (err) {
-                console.error('Error accessing camera:', err);
-                cameraPlaceholder.innerHTML = `<p class="text-red-400">Could not access camera. Please grant permission and refresh.</p>`;
-            }
-        }
-
-        function takePhoto() {
-            if (appState.photosTaken >= 4) return;
-            
-            const cameraView = document.getElementById('camera');
             const generateBtn = document.getElementById('generateBtn');
-            const captureBtn = document.getElementById('captureBtn');
             const photoCountDisplay = document.getElementById('photoCount');
+            const collageContainer = document.getElementById('collageContainer');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const descriptionInput = document.getElementById('description-input');
 
-            const canvas = document.createElement('canvas');
-            const size = Math.min(cameraView.videoWidth, cameraView.videoHeight);
-            canvas.width = size;
-            canvas.height = size;
-            
-            const context = canvas.getContext('2d');
-            const offsetX = (cameraView.videoWidth - size) / 2;
-            const offsetY = (cameraView.videoHeight - size) / 2;
-            context.drawImage(cameraView, offsetX, offsetY, size, size, 0, 0, size, size);
-            
-            const photoData = canvas.toDataURL('image/jpeg');
-            appState.photos.push(photoData);
-            
-            const previewElement = document.getElementById(`preview${appState.currentPreviewIndex}`);
-            previewElement.innerHTML = `<img src="${photoData}" class="photo-preview">`;
-            
-            appState.photosTaken++;
-            appState.currentPreviewIndex++;
-            photoCountDisplay.textContent = appState.photosTaken;
-            
-            previewElement.classList.add('ring-4', 'ring-blue-500');
-            setTimeout(() => previewElement.classList.remove('ring-4', 'ring-blue-500'), 500);
-            
-            if (appState.photosTaken === 4) {
-                generateBtn.disabled = false;
-                generateBtn.classList.add('pulse-animation');
-                captureBtn.disabled = true;
-                captureBtn.classList.remove('pulse-animation');
+            // --- Camera & Collage Functions ---
+            async function initCamera() {
+                try {
+                    appState.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+                    cameraView.srcObject = appState.stream;
+                    cameraView.classList.remove('hidden');
+                    cameraPlaceholder.classList.add('hidden');
+                    captureBtn.disabled = false;
+                    captureBtn.classList.add('pulse-animation');
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    cameraPlaceholder.innerHTML = `<p class="text-red-400">Could not access camera. Please grant permission and refresh.</p>`;
+                }
             }
-        }
 
-        function generateCollage() {
-            if (appState.photosTaken < 4) return;
-            
-            for (let i = 0; i < 4; i++) {
-                document.getElementById(`collage${i+1}`).src = appState.photos[i];
+            function takePhoto() {
+                if (appState.photosTaken >= 4) return;
+                
+                const canvas = document.createElement('canvas');
+                const size = Math.min(cameraView.videoWidth, cameraView.videoHeight);
+                canvas.width = size;
+                canvas.height = size;
+                
+                const context = canvas.getContext('2d');
+                const offsetX = (cameraView.videoWidth - size) / 2;
+                const offsetY = (cameraView.videoHeight - size) / 2;
+                context.drawImage(cameraView, offsetX, offsetY, size, size, 0, 0, size, size);
+                
+                const photoData = canvas.toDataURL('image/jpeg');
+                appState.photos.push(photoData);
+                
+                const previewElement = document.getElementById(`preview${appState.currentPreviewIndex}`);
+                previewElement.innerHTML = `<img src="${photoData}" class="photo-preview">`;
+                
+                appState.photosTaken++;
+                appState.currentPreviewIndex++;
+                photoCountDisplay.textContent = appState.photosTaken;
+                
+                previewElement.classList.add('ring-4', 'ring-blue-500');
+                setTimeout(() => previewElement.classList.remove('ring-4', 'ring-blue-500'), 500);
+                
+                if (appState.photosTaken === 4) {
+                    generateBtn.disabled = false;
+                    generateBtn.classList.add('pulse-animation');
+                    captureBtn.disabled = true;
+                    captureBtn.classList.remove('pulse-animation');
+                }
             }
-            
-            document.getElementById('collageContainer').classList.remove('hidden');
-            document.getElementById('googleIntegration').classList.remove('hidden');
-            document.getElementById('collageContainer').scrollIntoView({ behavior: 'smooth' });
-        }
 
-        async function getCollageAsBlob() {
-            const collageCanvas = document.createElement('canvas');
-            const ctx = collageCanvas.getContext('2d');
-            const size = 1000;
-            const gap = 10;
-            const imgSize = (size - gap) / 2;
+            function generateCollage() {
+                if (appState.photosTaken < 4) return;
+                
+                for (let i = 0; i < 4; i++) {
+                    document.getElementById(`collage${i+1}`).src = appState.photos[i];
+                }
+                
+                collageContainer.classList.remove('hidden');
+                collageContainer.scrollIntoView({ behavior: 'smooth' });
+            }
 
-            collageCanvas.width = size;
-            collageCanvas.height = size;
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, size, size);
+            async function getCollageAsBlob() {
+                const collageCanvas = document.createElement('canvas');
+                const ctx = collageCanvas.getContext('2d');
+                const size = 1000;
+                const gap = 10;
+                const imgSize = (size - gap) / 2;
 
-            const loadImage = (src, x, y) => new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    ctx.drawImage(img, x, y, imgSize, imgSize);
-                    resolve();
-                };
-                img.src = src;
-            });
+                collageCanvas.width = size;
+                collageCanvas.height = size;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, size, size);
 
-            await Promise.all([
-                loadImage(appState.photos[0], 0, 0),
-                loadImage(appState.photos[1], imgSize + gap, 0),
-                loadImage(appState.photos[2], 0, imgSize + gap),
-                loadImage(appState.photos[3], imgSize + gap, imgSize + gap)
-            ]);
+                const loadImage = (src, x, y) => new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        ctx.drawImage(img, x, y, imgSize, imgSize);
+                        resolve();
+                    };
+                    img.src = src;
+                });
 
-            const descriptionText = document.getElementById('description-input').value.trim();
-            if (descriptionText) {
-                ctx.font = 'bold 32px Poppins';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                const maxWidth = size - 40;
-                const words = descriptionText.split(' ');
-                let line = '';
-                const lines = [];
-                for (let n = 0; n < words.length; n++) {
-                    const testLine = line + words[n] + ' ';
-                    if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-                        lines.push(line);
-                        line = words[n] + ' ';
-                    } else {
-                        line = testLine;
+                await Promise.all([
+                    loadImage(appState.photos[0], 0, 0),
+                    loadImage(appState.photos[1], imgSize + gap, 0),
+                    loadImage(appState.photos[2], 0, imgSize + gap),
+                    loadImage(appState.photos[3], imgSize + gap, imgSize + gap)
+                ]);
+
+                const descriptionText = descriptionInput.value.trim();
+                if (descriptionText) {
+                    ctx.font = 'bold 32px Poppins';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const maxWidth = size - 40;
+                    const words = descriptionText.split(' ');
+                    let line = '';
+                    const lines = [];
+                    for (let n = 0; n < words.length; n++) {
+                        const testLine = line + words[n] + ' ';
+                        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                            lines.push(line);
+                            line = words[n] + ' ';
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    lines.push(line);
+                    const lineHeight = 40;
+                    const backgroundHeight = (lines.length * lineHeight) + 20;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                    ctx.fillRect(0, size - backgroundHeight, size, backgroundHeight);
+                    ctx.fillStyle = 'white';
+                    let lineY = size - backgroundHeight + (lineHeight / 2) + 10;
+                    for(const l of lines) {
+                        ctx.fillText(l.trim(), size / 2, lineY);
+                        lineY += lineHeight;
                     }
                 }
-                lines.push(line);
-                const lineHeight = 40;
-                const backgroundHeight = (lines.length * lineHeight) + 20;
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-                ctx.fillRect(0, size - backgroundHeight, size, backgroundHeight);
-                ctx.fillStyle = 'white';
-                let lineY = size - backgroundHeight + (lineHeight / 2) + 10;
-                for(const l of lines) {
-                    ctx.fillText(l.trim(), size / 2, lineY);
-                    lineY += lineHeight;
-                }
-            }
-            
-            return new Promise(resolve => collageCanvas.toBlob(resolve, 'image/jpeg', 0.9));
-        }
-
-        async function downloadCollage() {
-            const blob = await getCollageAsBlob();
-            const link = document.createElement('a');
-            link.download = 'photo-collage.jpg';
-            link.href = URL.createObjectURL(blob);
-            link.click();
-            URL.revokeObjectURL(link.href);
-        }
-
-        function resetApp() {
-            appState.photosTaken = 0;
-            appState.currentPreviewIndex = 1;
-            appState.photos.length = 0;
-            
-            document.getElementById('photoCount').textContent = '0';
-            document.getElementById('description-input').value = '';
-            
-            for (let i = 1; i <= 4; i++) {
-                document.getElementById(`preview${i}`).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><div class="photo-count">${i}</div>`;
-            }
-            
-            document.getElementById('collageContainer').classList.add('hidden');
-            document.getElementById('googleIntegration').classList.add('hidden');
-            
-            const captureBtn = document.getElementById('captureBtn');
-            captureBtn.disabled = false;
-            captureBtn.classList.add('pulse-animation');
-            
-            const generateBtn = document.getElementById('generateBtn');
-            generateBtn.disabled = true;
-            generateBtn.classList.remove('pulse-animation');
-            
-            document.getElementById('uploadBtn').disabled = true;
-            document.getElementById('uploadStatus').textContent = '';
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-
-        // --- Google API Integration ---
-        // These functions are now global and will be called by the script onload attributes
-        function gapiLoaded() {
-            gapi.load('client', initializeGapiClient);
-        }
-
-        async function initializeGapiClient() {
-            await gapi.client.init({ discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest", "https://sheets.googleapis.com/$discovery/rest?version=v4"] });
-            gapiInited = true;
-            checkReadyState();
-        }
-
-        function gisLoaded() {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: SCOPES,
-                callback: handleTokenResponse,
-            });
-            gisInited = true;
-            checkReadyState();
-        }
-
-        function checkReadyState() {
-            if (gapiInited && gisInited && domReady) {
-                document.getElementById('authorize_button').classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-        }
-
-        function handleTokenResponse(resp) {
-            const uploadStatus = document.getElementById('uploadStatus');
-            if (resp.error) {
-                console.error('Google Auth Error:', resp.error);
-                uploadStatus.textContent = 'Authentication failed.';
-                return;
-            }
-            updateUiWithSignInStatus(true);
-        }
-
-        function updateUiWithSignInStatus(isSignedIn) {
-            const authorizeButton = document.getElementById('authorize_button');
-            const signoutButton = document.getElementById('signout_button');
-            const uploadControls = document.getElementById('uploadControls');
-            const uploadBtn = document.getElementById('uploadBtn');
-            const googleSignInMessage = document.getElementById('googleSignInMessage');
-            const uploadStatus = document.getElementById('uploadStatus');
-
-            if (!authorizeButton) return; // Guard against DOM not being ready
-
-            authorizeButton.classList.toggle('hidden', isSignedIn);
-            signoutButton.classList.toggle('hidden', !isSignedIn);
-            uploadControls.classList.toggle('hidden', !isSignedIn);
-            uploadBtn.disabled = !isSignedIn;
-            if (isSignedIn) {
-                googleSignInMessage.textContent = 'You are signed in!';
-            } else {
-                googleSignInMessage.textContent = 'Sign in with Google to save your collage.';
-                uploadStatus.textContent = '';
-            }
-        }
-
-        async function uploadCollageToGoogle() {
-            const uploadBtn = document.getElementById('uploadBtn');
-            const uploadStatus = document.getElementById('uploadStatus');
-
-            if (!gapi.client.getToken()) {
-                uploadStatus.textContent = 'Please sign in first.';
-                return;
-            }
-
-            uploadBtn.disabled = true;
-            uploadStatus.textContent = 'Generating collage...';
-
-            const collageBlob = await getCollageAsBlob();
-            const description = document.getElementById('description-input').value.trim() || 'No description';
-            const timestamp = new Date().toISOString();
-            const fileName = `collage-${new Date().getTime()}.jpg`;
-
-            uploadStatus.textContent = 'Uploading to Google Drive...';
-            
-            try {
-                const driveResponse = await uploadFileToDrive(collageBlob, fileName);
-                const fileId = driveResponse.result.id;
-                uploadStatus.textContent = 'Getting file link...';
                 
-                await gapi.client.drive.permissions.create({ fileId: fileId, resource: { role: 'reader', type: 'anyone' } });
-                const fileMetadata = await gapi.client.drive.files.get({ fileId: fileId, fields: 'webViewLink' });
-                const driveLink = fileMetadata.result.webViewLink;
-
-                uploadStatus.textContent = 'Saving data to Google Sheets...';
-                await appendDataToSheet(timestamp, description, driveLink);
-
-                uploadStatus.innerHTML = `Success! <a href="${driveLink}" target="_blank" class="text-blue-600 hover:underline">View Collage</a>`;
-            } catch (error) {
-                console.error('Error during upload process:', error);
-                uploadStatus.textContent = `Error: ${error.result?.error?.message || error.message || 'An unknown error occurred.'}`;
-                uploadBtn.disabled = false;
+                return new Promise(resolve => collageCanvas.toBlob(resolve, 'image/jpeg', 0.9));
             }
-        }
 
-        function uploadFileToDrive(fileData, fileName) {
-            const metadata = { 'name': fileName, 'mimeType': 'image/jpeg' };
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', fileData);
-            return gapi.client.request({
-                path: '/upload/drive/v3/files',
-                method: 'POST',
-                params: { uploadType: 'multipart' },
-                body: form
-            });
-        }
+            async function downloadCollage() {
+                const blob = await getCollageAsBlob();
+                const link = document.createElement('a');
+                link.download = 'photo-collage.jpg';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }
 
-        async function appendDataToSheet(timestamp, description, driveLink) {
-            const params = {
-                spreadsheetId: SPREADSHEET_ID,
-                range: 'A1',
-                valueInputOption: 'USER_ENTERED',
-                insertDataOption: 'INSERT_ROWS',
-            };
-            const valueRangeBody = {
-                "majorDimension": "ROWS",
-                "values": [[timestamp, description, driveLink]]
-            };
-            return gapi.client.sheets.spreadsheets.values.append(params, valueRangeBody);
-        }
-
-        // --- App Initialization ---
-        document.addEventListener('DOMContentLoaded', () => {
-            domReady = true;
-
-            // Attach Event Listeners
-            document.getElementById('captureBtn').addEventListener('click', takePhoto);
-            document.getElementById('generateBtn').addEventListener('click', generateCollage);
-            document.getElementById('downloadBtn').addEventListener('click', downloadCollage);
-            document.getElementById('resetBtn').addEventListener('click', resetApp);
-            document.getElementById('uploadBtn').addEventListener('click', uploadCollageToGoogle);
-            
-            document.getElementById('authorize_button').onclick = () => tokenClient.requestAccessToken();
-            document.getElementById('signout_button').onclick = () => {
-                const token = gapi.client.getToken();
-                if (token) {
-                    google.accounts.oauth2.revoke(token.access_token, () => {
-                        gapi.client.setToken('');
-                        updateUiWithSignInStatus(false);
-                    });
+            function resetApp() {
+                appState.photosTaken = 0;
+                appState.currentPreviewIndex = 1;
+                appState.photos.length = 0;
+                
+                photoCountDisplay.textContent = '0';
+                descriptionInput.value = '';
+                
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`preview${i}`).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><div class="photo-count">${i}</div>`;
                 }
-            };
+                
+                collageContainer.classList.add('hidden');
+                
+                captureBtn.disabled = false;
+                captureBtn.classList.add('pulse-animation');
+                
+                generateBtn.disabled = true;
+                generateBtn.classList.remove('pulse-animation');
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // --- Attach Event Listeners ---
+            captureBtn.addEventListener('click', takePhoto);
+            generateBtn.addEventListener('click', generateCollage);
+            downloadBtn.addEventListener('click', downloadCollage);
+            resetBtn.addEventListener('click', resetApp);
             
-            // Initial Setup
+            // --- Initial Setup ---
             initCamera();
-            checkReadyState(); // Check if GAPI/GIS loaded before DOM
         });
     </script>
 </body>
